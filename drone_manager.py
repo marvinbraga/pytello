@@ -31,7 +31,7 @@ class BaseDroneManager(metaclass=ABCMeta):
         self.socket.bind((self.host_ip, self.host_port))
         self.response = None
         self.stop_event = Event()
-        self._response_thread = Thread(target=self.receive_response, args=(self.stop_event,))
+        self._response_thread = Thread(target=self._receive_response, args=(self.stop_event,))
         self._response_thread.start()
         self._init_commands()
 
@@ -56,21 +56,21 @@ class BaseDroneManager(metaclass=ABCMeta):
         """ Verifica se existe uma response. """
         return self.response is None
 
+    def _receive_response(self, stop_event):
+        """ Info """
+        while not stop_event.is_set():
+            try:
+                self.response, ip = self.socket.recvfrom(3000)
+                logger.info({'action': '_receive_response', 'response': self.response})
+            except socket.error as e:
+                logger.error({'action': '_receive_response', 'error': e})
+                break
+
     def stop(self):
         """ Fecha a conexão """
         self.stop_event.set()
         self._retry(self._response_thread.is_alive, 30)
         self.socket.close()
-
-    def receive_response(self, stop_event):
-        """ Info """
-        while not stop_event.is_set():
-            try:
-                self.response, ip = self.socket.recvfrom(3000)
-                logger.info({'action': 'receive_response', 'response': self.response})
-            except socket.error as e:
-                logger.error({'action': 'receive_response', 'error': e})
-                break
 
     def send_command(self, command):
         """ Registrar o envio de um comando. """
