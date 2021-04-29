@@ -38,7 +38,7 @@ class AbstractPatrolMiddleware(metaclass=ABCMeta):
 
         process_id = self._process(status, args, kwargs)
         if self._next_middleware:
-            self._next_middleware.process(status, args, kwargs)
+            process_id = self._next_middleware.process(status, args, kwargs)
         return process_id
 
     def set_drone_manager(self, value):
