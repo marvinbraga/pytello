@@ -145,10 +145,10 @@ class BasicPatrolMiddleware(AbstractPatrolMiddleware):
 
 
 if __name__ == '__main__':
-    middleware = BasicPatrolMiddleware()
-    drone_manager = TelloDrone(middleware=middleware)
+    patrol_middleware = BasicPatrolMiddleware()
+    drone_manager = TelloDrone(middleware=patrol_middleware)
     try:
-        middleware.set_drone_manager(drone_manager)
+        patrol_middleware.set_drone_manager(drone_manager)
         drone_manager.set_speed(100).takeoff()
         time.sleep(7)
         drone_manager.clockwise(90).clockwise(90).clockwise(90).clockwise(90)
