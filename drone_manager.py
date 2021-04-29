@@ -138,7 +138,7 @@ class BasicPatrolMiddleware(AbstractPatrolMiddleware):
             self._drone_manager.clockwise(90)
         elif process_id == 3:
             self._drone_manager.down()
-        elif process_id == 4:
+        elif process_id > 3:
             process_id = 0
         time.sleep(3)
         return process_id
