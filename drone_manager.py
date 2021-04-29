@@ -2,15 +2,10 @@
 """
 Módulo de conexão com o Tello Drone.
 """
-import logging
-import sys
 import time
 from enum import Enum
 
 from abstract_drone import AbstractDroneManager, AbstractPatrolMiddleware
-
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-logger = logging.getLogger(__name__)
 
 
 # COMMAND_PORT = 8889

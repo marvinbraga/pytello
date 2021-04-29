@@ -3,13 +3,15 @@
 Módulo para Drone Abstrato.
 """
 import contextlib
+import logging
 import socket
+import sys
 import threading
 import time
 from abc import ABCMeta, abstractmethod
 from threading import Event, Thread
 
-from drone_manager import logger
+logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
 class DroneManagerNotFound(Exception):
@@ -68,15 +70,18 @@ class AbstractPatrolMiddleware(metaclass=ABCMeta):
 class AbstractDroneManager(metaclass=ABCMeta):
     """ Classe para gerenciamento do drone. """
 
+    logger = logging.getLogger('AbstractDroneManager')
+
     def __init__(self, host_ip, host_port, drone_ip, drone_port, is_imperial, speed, middleware):
         self.middleware = middleware
         self.speed = speed
         self.is_imperial = is_imperial
-        self.drone_port = drone_port
         self.drone_ip = drone_ip
-        self.host_port = host_port
-        self.host_ip = host_ip
+        self.drone_port = drone_port
         self.drone_address = (drone_ip, drone_port)
+        self.host_ip = host_ip
+        self.host_port = host_port
+        # Conexão
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.host_ip, self.host_port))
         self.response = None
@@ -117,9 +122,9 @@ class AbstractDroneManager(metaclass=ABCMeta):
         while not stop_event.is_set():
             try:
                 self.response, ip = self.socket.recvfrom(3000)
-                logger.info({'action': 'receive_response', 'response': self.response})
+                self.logger.info({'action': 'receive_response', 'response': self.response})
             except socket.error as e:
-                logger.error({'action': 'receive_response', 'error': e})
+                self.logger.error({'action': 'receive_response', 'error': e})
                 break
 
     def stop(self):
@@ -130,7 +135,7 @@ class AbstractDroneManager(metaclass=ABCMeta):
 
     def send_command(self, command):
         """ Registrar o envio de um comando. """
-        logger.info({'action': 'send_command', 'command': command})
+        self.logger.info({'action': 'send_command', 'command': command})
         self.socket.sendto(command.encode('utf-8'), self.drone_address)
 
         self._retry(self._is_none_response, 3)
@@ -148,7 +153,7 @@ class AbstractDroneManager(metaclass=ABCMeta):
             self.patrol_event = Event()
             self._thread_patrol = Thread(
                 target=self._patrol,
-                args=(self._patrol_semaphore, self.patrol_event, self.middleware,)
+                args=(self._patrol_semaphore, self.patrol_event, self.middleware, self.logger, )
             )
             self.is_patrol = True
             self._thread_patrol.start()
@@ -165,7 +170,7 @@ class AbstractDroneManager(metaclass=ABCMeta):
         return self
 
     @staticmethod
-    def _patrol(semaphore, stop_event, middleware):
+    def _patrol(semaphore, stop_event, middleware, logger):
         """ Método para executar o patrulhamento. """
         is_acquire = semaphore.acquire(blocking=False)
         if is_acquire:
