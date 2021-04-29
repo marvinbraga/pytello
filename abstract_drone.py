@@ -27,9 +27,25 @@ class AbstractPatrolMiddleware(metaclass=ABCMeta):
         self._drone_manager = None
         self._next_middleware = next_middleware
 
+    def add_next(self, value):
+        """ Adicional middleware """
+        self._next_middleware = value
+        return self
+
+    def remove_next(self):
+        """ Remove o middleware. """
+        self._next_middleware = None
+        return self
+
     @abstractmethod
     def _process(self, status, *args, **kwargs):
-        return 0
+        """
+        Método que contem o processo de patrulhamento e deve ser implementado em cada uma de
+        suas especializações.
+        :return: Inteiro referente ao valor do status. Utilize 0 para reiniciar o processo,
+        caso necessário.
+        """
+        pass
 
     def process(self, status, *args, **kwargs):
         """ Método para executar processamento de patrulhamento """
