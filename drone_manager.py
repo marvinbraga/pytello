@@ -14,7 +14,7 @@ from abstract_drone import AbstractDroneManager, AbstractPatrolMiddleware
 
 class TelloFlipPosition(Enum):
     """ Posições para o drone fazer flip. """
-    left = 'i'
+    left = 'l'
     right = 'r'
     forward = 'f'
     back = 'b'
@@ -28,21 +28,85 @@ class TelloDrone(AbstractDroneManager):
 
     def __init__(self, host_ip='192.168.10.3', host_port=8889, drone_ip='192.168.10.1', drone_port=8889,
                  is_imperial=False, speed=DEFAULT_SPEED, middleware=None):
-        super(TelloDrone, self).__init__(host_ip, host_port, drone_ip, drone_port, is_imperial, speed, middleware)
+        super(TelloDrone, self).__init__(host_ip, host_port, drone_ip, drone_port,
+                                         is_imperial, speed, middleware)
+        self.middleware.set_drone_manager(self)
 
     def _init_commands(self):
+        """ Comandos de Inicialização do Drone. """
         self.send_command('command')
         self.send_command('streamon')
         self.set_speed(self.speed)
 
     def takeoff(self):
-        """ Info """
+        """ Levantar Voo. """
         self.send_command('takeoff')
         return self
 
     def land(self):
         """ Voltar para o chão. """
         self.send_command('land')
+        return self
+
+    def emergency(self):
+        """ Parar os motores imediatamente. """
+        self.send_command('emergency')
+        return self
+
+    def go(self, x, y, z, speed=DEFAULT_SPEED):
+        """ Para para a posição determinada com a velocidade informada. """
+        self.send_command(f'go {x} {y} {z} {speed}')
+        return self
+
+    def go_mid(self, x, y, z, mid, speed=DEFAULT_SPEED):
+        """ Para para a posição determinada com a velocidade informada. """
+        self.send_command(f'go {x} {y} {z} {speed} {mid}')
+        return self
+
+    def stop(self):
+        """ Para o drone no ar. (Funciona a qualquer momento). """
+        self.send_command('stop')
+        return self
+
+    def curve(self, x1, y1, z1, x2, y2, z2, speed=DEFAULT_SPEED):
+        """ Faz uma curva de acordo com as coordenadas. """
+        self.send_command(f'curve {x1} {y1} {z1} {x2} {y2} {z2} {speed}')
+        return self
+
+    def curve_mid(self, x1, y1, z1, x2, y2, z2, mid, speed=DEFAULT_SPEED):
+        """
+        Voe em uma curva de acordo com as duas coordenadas fornecidas da missão
+        Pad ID em 'velocidade' (cm / s). Se o raio do arco não estiver na faixa
+        de 0,5 a 10 metros, ele responderá com um erro.
+        """
+        self.send_command(f'curve {x1} {y1} {z1} {x2} {y2} {z2} {speed} {mid}')
+        return self
+
+    def set_wifi_pw(self, ssid, password):
+        """
+        Atualiza os parâmetros de acesso wi-fi.
+        :param ssid: Nome da rede.
+        :param password: Senha da rede.
+        :return: self.
+        """
+        self.send_command(f'wifi {ssid} {password}')
+
+    def set_station_mode(self, ssid, password):
+        """
+        Set the Tello to station mode, and connect to a new access point with the access
+        point's ssid and password.
+        :param ssid: Updated wi-fi name.
+        :param password: Update wi-fi password.
+        :return: self
+        """
+        self.send_command(f'ap {ssid} {password}')
+
+    def jump(self, x, y, z, mid1, mid2, speed=DEFAULT_SPEED):
+        """
+        Voe para as coordenadas x, y e z da missão Pad ID1 e reconheça as
+        coordenadas 0, 0, z da missão pad ID2 e gire para o valor de guinada.
+        """
+        self.send_command(f'jump {x} {y} {z} {speed} yaw {mid1} {mid2}')
         return self
 
     def _move(self, direction, distance):
@@ -121,6 +185,48 @@ class TelloDrone(AbstractDroneManager):
         self._flip(TelloFlipPosition.back)
         return self
 
+    def get_speed(self):
+        """
+        Obtem a velocidade corrente.
+        :return: Int
+        """
+        return int(self.send_command('speed?'))
+
+    def get_battery(self):
+        """
+        Obtem o percentual de carga da bateria.
+        :return: Int
+        """
+        return int(self.send_command('battery?'))
+
+    def get_time(self):
+        """
+        Obtem o tempo de vôo.
+        :return: string
+        """
+        return self.send_command('time?')
+
+    def get_wifi_snr(self):
+        """
+        Obtem o SNR da rede Wi-fi.
+        :return: string
+        """
+        return self.send_command('wifi?')
+
+    def get_sdk(self):
+        """
+        Obtem a versão do SDK Tello.
+        :return: string
+        """
+        return self.send_command('sdk?')
+
+    def get_sn(self):
+        """
+        Obtem o número do serial Tello.
+        :return: string
+        """
+        return self.send_command('sn?')
+
 
 class BasicPatrolMiddleware(AbstractPatrolMiddleware):
     """ Faz o patrulhamento básico. """
@@ -140,32 +246,30 @@ class BasicPatrolMiddleware(AbstractPatrolMiddleware):
 
 
 if __name__ == '__main__':
-    patrol_middleware = BasicPatrolMiddleware()
-    drone_manager = TelloDrone(middleware=patrol_middleware)
+    drone_manager = TelloDrone(middleware=BasicPatrolMiddleware())
     try:
-        patrol_middleware.set_drone_manager(drone_manager)
         drone_manager.set_speed(100).takeoff()
         time.sleep(7)
-        drone_manager.clockwise(90).clockwise(90).clockwise(90).clockwise(90)
-        time.sleep(3)
-        drone_manager.count_clockwise(90).count_clockwise(90).count_clockwise(90).count_clockwise(90)
-        time.sleep(3)
+        # drone_manager.clockwise(90).clockwise(90).clockwise(90).clockwise(90)
+        # time.sleep(3)
+        # drone_manager.count_clockwise(90).count_clockwise(90).count_clockwise(90).count_clockwise(90)
+        # time.sleep(3)
+        #
+        # drone_manager.forward()
+        # time.sleep(5)
+        # drone_manager.right()
+        # time.sleep(5)
+        # drone_manager.back()
+        # time.sleep(5)
+        # drone_manager.left()
+        # time.sleep(5)
 
-        drone_manager.forward()
-        time.sleep(5)
-        drone_manager.right()
-        time.sleep(5)
-        drone_manager.back()
-        time.sleep(5)
-        drone_manager.left()
-        time.sleep(5)
-
-        drone_manager.set_speed(10)
-        time.sleep(1)
-        drone_manager.up()
-        time.sleep(5)
-        drone_manager.down()
-        time.sleep(5)
+        # drone_manager.set_speed(10)
+        # time.sleep(1)
+        # drone_manager.up()
+        # time.sleep(5)
+        # drone_manager.down()
+        # time.sleep(5)
 
         drone_manager.flip_left()
         time.sleep(3)
@@ -176,9 +280,9 @@ if __name__ == '__main__':
         drone_manager.flip_back()
         time.sleep(3)
 
-        drone_manager.patrol()
-        time.sleep(45)
-        drone_manager.stop_patrol()
+        # drone_manager.patrol()
+        # time.sleep(45)
+        # drone_manager.stop_patrol()
 
         drone_manager.land()
     finally:
