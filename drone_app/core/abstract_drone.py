@@ -69,7 +69,7 @@ class AbstractPatrolMiddleware(metaclass=ABCMeta):
         return self
 
 
-class AbstractDroneManager(metaclass=Singleton, metaclass=ABCMeta):
+class AbstractDroneManager(metaclass=Singleton):
     """ Classe para gerenciamento do drone. """
 
     logger = logging.getLogger('AbstractDroneManager')
