@@ -11,6 +11,8 @@ import time
 from abc import ABCMeta, abstractmethod
 from threading import Event, Thread
 
+from core.sigleton import Singleton
+
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
 
@@ -25,18 +27,18 @@ class DroneManagerNotFound(Exception):
 class AbstractPatrolMiddleware(metaclass=ABCMeta):
     """ Classe abstrata para implementações de regras de patrulhamento """
 
-    def __init__(self, next_middleware=None):
+    def __init__(self, next_patrol_middleware=None):
         self._drone_manager = None
-        self._next_middleware = next_middleware
+        self._next_patrol_middleware = next_patrol_middleware
 
     def add_next(self, value):
-        """ Adicional middleware """
-        self._next_middleware = value
+        """ Adicional patrol_middleware """
+        self._next_patrol_middleware = value
         return self
 
     def remove_next(self):
-        """ Remove o middleware. """
-        self._next_middleware = None
+        """ Remove o patrol_middleware. """
+        self._next_patrol_middleware = None
         return self
 
     @abstractmethod
@@ -55,25 +57,25 @@ class AbstractPatrolMiddleware(metaclass=ABCMeta):
             raise DroneManagerNotFound()
 
         process_id = self._process(status, args, kwargs)
-        if self._next_middleware:
-            process_id = self._next_middleware.process(status, args, kwargs)
+        if self._next_patrol_middleware:
+            process_id = self._next_patrol_middleware.process(status, args, kwargs)
         return process_id
 
     def set_drone_manager(self, value):
-        """ Informa o gerenciador do drone para todos os middlewares vinculados. """
+        """ Informa o gerenciador do drone para todos os patrol_middlewares vinculados. """
         self._drone_manager = value
-        if self._next_middleware:
-            self._next_middleware.set_drone_manager(value)
+        if self._next_patrol_middleware:
+            self._next_patrol_middleware.set_drone_manager(value)
         return self
 
 
-class AbstractDroneManager(metaclass=ABCMeta):
+class AbstractDroneManager(metaclass=Singleton, metaclass=ABCMeta):
     """ Classe para gerenciamento do drone. """
 
     logger = logging.getLogger('AbstractDroneManager')
 
-    def __init__(self, host_ip, host_port, drone_ip, drone_port, is_imperial, speed, middleware):
-        self.middleware = middleware
+    def __init__(self, host_ip, host_port, drone_ip, drone_port, is_imperial, speed, patrol_middleware):
+        self.patrol_middleware = patrol_middleware
         self.speed = speed
         self.is_imperial = is_imperial
         self.drone_ip = drone_ip
@@ -153,7 +155,7 @@ class AbstractDroneManager(metaclass=ABCMeta):
             self.patrol_event = Event()
             self._thread_patrol = Thread(
                 target=self._patrol,
-                args=(self._patrol_semaphore, self.patrol_event, self.middleware, self.logger, )
+                args=(self._patrol_semaphore, self.patrol_event, self.patrol_middleware, self.logger, )
             )
             self.is_patrol = True
             self._thread_patrol.start()
@@ -170,7 +172,7 @@ class AbstractDroneManager(metaclass=ABCMeta):
         return self
 
     @staticmethod
-    def _patrol(semaphore, stop_event, middleware, logger):
+    def _patrol(semaphore, stop_event, patrol_middleware, logger):
         """ Método para executar o patrulhamento. """
         is_acquire = semaphore.acquire(blocking=False)
         if is_acquire:
@@ -180,7 +182,7 @@ class AbstractDroneManager(metaclass=ABCMeta):
                 status = 0
                 while not stop_event.is_set():
                     status += 1
-                    if middleware:
-                        status = middleware.process(status)
+                    if patrol_middleware:
+                        status = patrol_middleware.process(status)
         else:
             logger.warning({'action': '_patrol', 'status': 'not_acquire'})

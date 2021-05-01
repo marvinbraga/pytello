@@ -5,7 +5,7 @@ Módulo de conexão com o Tello Drone.
 import time
 from enum import Enum
 
-from abstract_drone import AbstractDroneManager, AbstractPatrolMiddleware
+from drone_app.core.abstract_drone import AbstractDroneManager, AbstractPatrolMiddleware
 
 
 # COMMAND_PORT = 8889
@@ -27,10 +27,10 @@ class TelloDrone(AbstractDroneManager):
     DEFAULT_DEGREE = 10
 
     def __init__(self, host_ip='192.168.10.3', host_port=8889, drone_ip='192.168.10.1', drone_port=8889,
-                 is_imperial=False, speed=DEFAULT_SPEED, middleware=None):
+                 is_imperial=False, speed=DEFAULT_SPEED, patrol_middleware=None):
         super(TelloDrone, self).__init__(host_ip, host_port, drone_ip, drone_port,
-                                         is_imperial, speed, middleware)
-        self.middleware.set_drone_manager(self)
+                                         is_imperial, speed, patrol_middleware)
+        self.patrol_middleware.set_drone_manager(self)
 
     def _init_commands(self):
         """ Comandos de Inicialização do Drone. """
@@ -243,47 +243,3 @@ class BasicPatrolMiddleware(AbstractPatrolMiddleware):
             process_id = 0
         time.sleep(3)
         return process_id
-
-
-if __name__ == '__main__':
-    drone_manager = TelloDrone(middleware=BasicPatrolMiddleware())
-    try:
-        drone_manager.set_speed(100).takeoff()
-        time.sleep(7)
-        # drone_manager.clockwise(90).clockwise(90).clockwise(90).clockwise(90)
-        # time.sleep(3)
-        # drone_manager.count_clockwise(90).count_clockwise(90).count_clockwise(90).count_clockwise(90)
-        # time.sleep(3)
-        #
-        # drone_manager.forward()
-        # time.sleep(5)
-        # drone_manager.right()
-        # time.sleep(5)
-        # drone_manager.back()
-        # time.sleep(5)
-        # drone_manager.left()
-        # time.sleep(5)
-
-        # drone_manager.set_speed(10)
-        # time.sleep(1)
-        # drone_manager.up()
-        # time.sleep(5)
-        # drone_manager.down()
-        # time.sleep(5)
-
-        drone_manager.flip_left()
-        time.sleep(3)
-        drone_manager.flip_right()
-        time.sleep(3)
-        drone_manager.flip_forward()
-        time.sleep(3)
-        drone_manager.flip_back()
-        time.sleep(3)
-
-        # drone_manager.patrol()
-        # time.sleep(45)
-        # drone_manager.stop_patrol()
-
-        drone_manager.land()
-    finally:
-        drone_manager.stop()

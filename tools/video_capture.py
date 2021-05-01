@@ -70,8 +70,8 @@ class FaceEyesMiddleware(BaseMiddleware):
     """ Classe middleware para encontrar olhos e face """
     def __init__(self, next_middleware=None):
         super(FaceEyesMiddleware, self).__init__(next_middleware)
-        self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
-        self._eye_cascade = self.get_cascade('haarcascade_eye.xml')
+        self._face_cascade = self.get_cascade('../data/haarcascade_frontalface_default.xml')
+        self._eye_cascade = self.get_cascade('../data/haarcascade_eye.xml')
 
     def _process(self, frame):
         """
