@@ -6,10 +6,9 @@ import contextlib
 import logging
 import socket
 import sys
-import threading
 import time
 from abc import ABCMeta, abstractmethod
-from threading import Event, Thread
+from threading import Event, Thread, Semaphore
 
 from core.sigleton import Singleton
 
@@ -70,7 +69,7 @@ class AbstractPatrolMiddleware(metaclass=ABCMeta):
 
 
 class AbstractDroneManager(metaclass=Singleton):
-    """ Classe para gerenciamento do drone. """
+    """ Classe para gerenciamento do drone. ABCMeta """
 
     logger = logging.getLogger('AbstractDroneManager')
 
@@ -90,7 +89,7 @@ class AbstractDroneManager(metaclass=Singleton):
         # Patrol
         self.patrol_event = None
         self.is_patrol = False
-        self._patrol_semaphore = threading.Semaphore()
+        self._patrol_semaphore = Semaphore()
         self._thread_patrol = None
         # Stop
         self.stop_event = Event()
@@ -155,7 +154,7 @@ class AbstractDroneManager(metaclass=Singleton):
             self.patrol_event = Event()
             self._thread_patrol = Thread(
                 target=self._patrol,
-                args=(self._patrol_semaphore, self.patrol_event, self.patrol_middleware, self.logger, )
+                args=(self._patrol_semaphore, self.patrol_event, self.patrol_middleware, self.logger,)
             )
             self.is_patrol = True
             self._thread_patrol.start()

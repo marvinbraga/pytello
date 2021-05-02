@@ -4,7 +4,7 @@ Server Módulo
 """
 import logging
 
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, Response
 
 import config
 from models.drone_manager import TelloDrone, BasicPatrolMiddleware
@@ -72,6 +72,22 @@ def command():
         drone.stop_patrol()
 
     return jsonify(status='success'), 200
+
+
+def video_generator():
+    drone = get_drone()
+    for jpeg in drone.video_jpeg_generator():
+        yield (
+            b'--frame\r\n'
+            b'Content-Type: image/jpeg\r\n\r\n' +
+            jpeg +
+            b'\r\n\r\n'
+        )
+
+
+@app.route('/video/streaming')
+def video_feed():
+    return Response(video_generator(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 def run():

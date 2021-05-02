@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Módulo de OpenCv.
+Módulo de OpenCvVideoCapture.
 """
 import os.path
 from abc import ABCMeta, abstractmethod
@@ -8,8 +8,8 @@ from abc import ABCMeta, abstractmethod
 import cv2 as cv
 
 
-class OpenCv:
-    """ Classe para trabalhar com o OpenCv. """
+class OpenCvVideoCapture:
+    """ Classe para trabalhar com o OpenCvVideoCapture. """
     def __init__(self, middleware, *args, **kwargs):
         self._args = args
         self._kwargs = kwargs
@@ -18,7 +18,7 @@ class OpenCv:
 
     def execute(self):
         """
-        Método para executa o OpenCv
+        Método para executa o OpenCvVideoCapture
         :return:
         """
         while True:
@@ -96,4 +96,4 @@ class FaceEyesMiddleware(BaseMiddleware):
 
 
 if __name__ == '__main__':
-    OpenCv(middleware=FaceEyesMiddleware()).execute()
+    OpenCvVideoCapture(middleware=FaceEyesMiddleware()).execute()

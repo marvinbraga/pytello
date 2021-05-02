@@ -5,7 +5,8 @@ Módulo de conexão com o Tello Drone.
 import time
 from enum import Enum
 
-from drone_app.core.abstract_drone import AbstractDroneManager, AbstractPatrolMiddleware
+from drone_app.core.abstract_drone import AbstractPatrolMiddleware
+from drone_app.core.abstract_video_drone import AbstractDroneVideoManager, VideoSetupFFmpeg
 
 
 # COMMAND_PORT = 8889
@@ -20,16 +21,17 @@ class TelloFlipPosition(Enum):
     back = 'b'
 
 
-class TelloDrone(AbstractDroneManager):
+class TelloDrone(AbstractDroneVideoManager):
     """ Classe Específica para o Drone Tello. """
     DEFAULT_DISTANCE = 0.30
     DEFAULT_SPEED = 10
     DEFAULT_DEGREE = 10
 
     def __init__(self, host_ip='192.168.10.3', host_port=8889, drone_ip='192.168.10.1', drone_port=8889,
-                 is_imperial=False, speed=DEFAULT_SPEED, patrol_middleware=None):
+                 is_imperial=False, speed=DEFAULT_SPEED, patrol_middleware=None, video_setup=None):
+        vs = video_setup if video_setup else VideoSetupFFmpeg()
         super(TelloDrone, self).__init__(host_ip, host_port, drone_ip, drone_port,
-                                         is_imperial, speed, patrol_middleware)
+                                         is_imperial, speed, patrol_middleware, vs)
         self.patrol_middleware.set_drone_manager(self)
 
     def _init_commands(self):
