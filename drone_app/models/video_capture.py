@@ -128,6 +128,10 @@ class DroneFaceDetectMiddleware(BaseMiddleware):
         self._drone_manager = drone_manager
         self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
 
+    def execute_drone_rules(self, frame):
+        """ Executa as Regras relacionadas à movimentação do drone. """
+        return self
+
     def _process(self, frame):
         """
         Encontrar face e olhos.
@@ -139,6 +143,8 @@ class DroneFaceDetectMiddleware(BaseMiddleware):
 
         for (x, y, w, h) in faces:
             cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            if self._drone_manager:
+                self.execute_drone_rules(frame)
             break
 
         return frame

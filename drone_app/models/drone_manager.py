@@ -7,10 +7,11 @@ from enum import Enum
 
 from drone_app.core.abstract_drone import AbstractPatrolMiddleware
 from drone_app.core.abstract_video_drone import AbstractDroneVideoManager, VideoSetupFFmpeg
+from models.video_capture import DroneFaceDetectMiddleware
+
 # COMMAND_PORT = 8889
 # STATE_PORT = 8890
 # VIDEO_STREAM_PORT = 11111
-from models.video_capture import DroneFaceDetectMiddleware
 
 
 class TelloFlipPosition(Enum):
