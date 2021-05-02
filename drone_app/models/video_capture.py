@@ -167,7 +167,7 @@ class DroneFaceDetectMiddleware(BaseMiddleware):
         if percent_face < -0.02:
             drone_x = 30
         # Movimenta o drone.
-        self._drone_manager.send_command(f'go {drone_x} {drone_y} {drone_z} {speed}', blocking=False)
+        self._drone_manager.go(drone_x, drone_y, drone_z, speed, blocking=False)
         return self
 
 

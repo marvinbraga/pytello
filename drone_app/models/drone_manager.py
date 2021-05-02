@@ -62,14 +62,14 @@ class TelloDrone(AbstractDroneVideoManager):
         self.send_command('emergency')
         return self
 
-    def go(self, x, y, z, speed=DEFAULT_SPEED):
+    def go(self, x, y, z, speed=DEFAULT_SPEED, blocking=True):
         """ Para para a posição determinada com a velocidade informada. """
-        self.send_command(f'go {x} {y} {z} {speed}')
+        self.send_command(f'go {x} {y} {z} {speed}', blocking)
         return self
 
-    def go_mid(self, x, y, z, mid, speed=DEFAULT_SPEED):
+    def go_mid(self, x, y, z, mid, speed=DEFAULT_SPEED, blocking=True):
         """ Para para a posição determinada com a velocidade informada. """
-        self.send_command(f'go {x} {y} {z} {speed} {mid}')
+        self.send_command(f'go {x} {y} {z} {speed} {mid}', blocking)
         return self
 
     def stop(self):
@@ -77,18 +77,18 @@ class TelloDrone(AbstractDroneVideoManager):
         self.send_command('stop')
         return self
 
-    def curve(self, x1, y1, z1, x2, y2, z2, speed=DEFAULT_SPEED):
+    def curve(self, x1, y1, z1, x2, y2, z2, speed=DEFAULT_SPEED, blocking=True):
         """ Faz uma curva de acordo com as coordenadas. """
-        self.send_command(f'curve {x1} {y1} {z1} {x2} {y2} {z2} {speed}')
+        self.send_command(f'curve {x1} {y1} {z1} {x2} {y2} {z2} {speed}', blocking)
         return self
 
-    def curve_mid(self, x1, y1, z1, x2, y2, z2, mid, speed=DEFAULT_SPEED):
+    def curve_mid(self, x1, y1, z1, x2, y2, z2, mid, speed=DEFAULT_SPEED, blocking=True):
         """
         Voe em uma curva de acordo com as duas coordenadas fornecidas da missão
         Pad ID em 'velocidade' (cm / s). Se o raio do arco não estiver na faixa
         de 0,5 a 10 metros, ele responderá com um erro.
         """
-        self.send_command(f'curve {x1} {y1} {z1} {x2} {y2} {z2} {speed} {mid}')
+        self.send_command(f'curve {x1} {y1} {z1} {x2} {y2} {z2} {speed} {mid}', blocking)
         return self
 
     def set_wifi_pw(self, ssid, password):
@@ -110,12 +110,12 @@ class TelloDrone(AbstractDroneVideoManager):
         """
         self.send_command(f'ap {ssid} {password}')
 
-    def jump(self, x, y, z, mid1, mid2, speed=DEFAULT_SPEED):
+    def jump(self, x, y, z, mid1, mid2, speed=DEFAULT_SPEED, blocking=True):
         """
         Voe para as coordenadas x, y e z da missão Pad ID1 e reconheça as
         coordenadas 0, 0, z da missão pad ID2 e gire para o valor de guinada.
         """
-        self.send_command(f'jump {x} {y} {z} {speed} yaw {mid1} {mid2}')
+        self.send_command(f'jump {x} {y} {z} {speed} yaw {mid1} {mid2}', blocking)
         return self
 
     def _move(self, direction, distance):
