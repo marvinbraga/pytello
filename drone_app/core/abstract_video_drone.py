@@ -13,7 +13,6 @@ import cv2
 import numpy as np
 
 from core.abstract_drone import AbstractDroneManager
-from models.video_capture import FaceEyesMiddleware
 
 
 class AbstractVideoSetup(metaclass=ABCMeta):
@@ -90,7 +89,8 @@ class VideoSetupFFmpeg(AbstractVideoSetup):
 class AbstractDroneVideoManager(AbstractDroneManager):
     """ Classe para gerenciar drones com vídeo """
 
-    def __init__(self, host_ip, host_port, drone_ip, drone_port, is_imperial, speed, patrol_middleware, video_setup):
+    def __init__(self, host_ip, host_port, drone_ip, drone_port, is_imperial, speed, patrol_middleware, video_setup,
+                 face_detect_middleware):
         super(AbstractDroneVideoManager, self).__init__(host_ip, host_port, drone_ip, drone_port, is_imperial, speed,
                                                         patrol_middleware)
         self.video_setup = video_setup
@@ -107,18 +107,16 @@ class AbstractDroneVideoManager(AbstractDroneManager):
         self._receive_video_thread.start()
         # Face Detect
         self._is_enable_face_detect = False
-        self._face_detect_middleware = None
+        self._face_detect_middleware = face_detect_middleware
 
     def enable_face_detect(self):
         """ Ativa a detecção de faces """
-        self._face_detect_middleware = FaceEyesMiddleware()
         self._is_enable_face_detect = True
         return self
 
     def disable_face_detect(self):
         """ Desativa a detecção de faces """
         self._is_enable_face_detect = False
-        self._face_detect_middleware = None
         return self
 
     def stop(self):
@@ -176,7 +174,8 @@ class AbstractDroneVideoManager(AbstractDroneManager):
             if not frame:
                 continue
 
-            frame = np.fromstring(frame, np.uint8).reshape(self.video_setup.frame_y, self.video_setup.frame_x, self.video_setup.divider)
+            frame = np.fromstring(frame, np.uint8).reshape(self.video_setup.frame_y, self.video_setup.frame_x,
+                                                           self.video_setup.divider)
             yield frame
 
     def video_jpeg_generator(self):

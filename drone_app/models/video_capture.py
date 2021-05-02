@@ -68,10 +68,10 @@ class BaseMiddleware(metaclass=ABCMeta):
         return result
 
 
-class FaceEyesMiddleware(BaseMiddleware):
+class FaceEyesDetectMiddleware(BaseMiddleware):
     """ Classe middleware para encontrar olhos e face """
     def __init__(self, next_middleware=None):
-        super(FaceEyesMiddleware, self).__init__(next_middleware)
+        super(FaceEyesDetectMiddleware, self).__init__(next_middleware)
         self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
         self._eye_cascade = self.get_cascade('haarcascade_eye.xml')
 
@@ -99,5 +99,50 @@ class FaceEyesMiddleware(BaseMiddleware):
         return frame
 
 
+class FaceDetectMiddleware(BaseMiddleware):
+    """ Classe middleware para encontrar olhos e face """
+    def __init__(self, next_middleware=None):
+        super(FaceDetectMiddleware, self).__init__(next_middleware)
+        self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
+
+    def _process(self, frame):
+        """
+        Encontrar face e olhos.
+        :param frame:
+        :return:
+        """
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        faces = self._face_cascade.detectMultiScale(gray, 1.3, 5)
+
+        for (x, y, w, h) in faces:
+            cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            break
+
+        return frame
+
+
+class DroneFaceDetectMiddleware(BaseMiddleware):
+    """ Classe middleware para encontrar olhos e face """
+    def __init__(self, next_middleware=None, drone_manager=None):
+        super(DroneFaceDetectMiddleware, self).__init__(next_middleware)
+        self._drone_manager = drone_manager
+        self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
+
+    def _process(self, frame):
+        """
+        Encontrar face e olhos.
+        :param frame:
+        :return:
+        """
+        gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+        faces = self._face_cascade.detectMultiScale(gray, 1.3, 5)
+
+        for (x, y, w, h) in faces:
+            cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            break
+
+        return frame
+
+
 if __name__ == '__main__':
-    OpenCvVideoCapture(middleware=FaceEyesMiddleware()).execute()
+    OpenCvVideoCapture(middleware=FaceEyesDetectMiddleware()).execute()
