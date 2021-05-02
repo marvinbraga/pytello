@@ -13,6 +13,7 @@ import cv2
 import numpy as np
 
 from core.abstract_drone import AbstractDroneManager
+from models.video_capture import FaceEyesMiddleware
 
 
 class AbstractVideoSetup(metaclass=ABCMeta):
@@ -104,6 +105,21 @@ class AbstractDroneVideoManager(AbstractDroneManager):
             args=(self.stop_event, self.proc_std_in, self.host_ip, self.video_port,)
         )
         self._receive_video_thread.start()
+        # Face Detect
+        self._is_enable_face_detect = False
+        self._face_detect_middleware = None
+
+    def enable_face_detect(self):
+        """ Ativa a detecção de faces """
+        self._face_detect_middleware = FaceEyesMiddleware()
+        self._is_enable_face_detect = True
+        return self
+
+    def disable_face_detect(self):
+        """ Desativa a detecção de faces """
+        self._is_enable_face_detect = False
+        self._face_detect_middleware = None
+        return self
 
     def stop(self):
         """ Parar a conexão com o drone. """
@@ -166,6 +182,12 @@ class AbstractDroneVideoManager(AbstractDroneManager):
     def video_jpeg_generator(self):
         """ Gerador de vídeo Jpeg. """
         for frame in self.video_binary_generator():
+            if self._is_enable_face_detect:
+                if self.is_patrol:
+                    self.stop_patrol()
+                # Aplica a detecção de faces
+                frame = self._face_detect_middleware.process(frame)
+
             _, jpeg = cv2.imencode('.jpg', frame)
             jpeg_binary = jpeg.tobytes()
             yield jpeg_binary

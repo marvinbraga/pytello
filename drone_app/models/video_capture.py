@@ -7,6 +7,8 @@ from abc import ABCMeta, abstractmethod
 
 import cv2 as cv
 
+from config import PROJECT_ROOT
+
 
 class OpenCvVideoCapture:
     """ Classe para trabalhar com o OpenCvVideoCapture. """
@@ -44,7 +46,7 @@ class BaseMiddleware(metaclass=ABCMeta):
         :param file_name: nome do cascade
         :return: obj
         """
-        file = os.path.normpath(f'./data/{file_name}')
+        file = os.path.normpath(os.path.join(PROJECT_ROOT, f'data/{file_name}'))
         if not os.path.isfile(file):
             raise FileNotFoundError()
         return cv.CascadeClassifier(file)
@@ -59,19 +61,19 @@ class BaseMiddleware(metaclass=ABCMeta):
         :param frame:
         :return:
         """
-        self._process(frame)
+        result = self._process(frame)
         if self._next:
-            self._next.process(frame)
+            result = self._next.process(result)
 
-        return self
+        return result
 
 
 class FaceEyesMiddleware(BaseMiddleware):
     """ Classe middleware para encontrar olhos e face """
     def __init__(self, next_middleware=None):
         super(FaceEyesMiddleware, self).__init__(next_middleware)
-        self._face_cascade = self.get_cascade('../data/haarcascade_frontalface_default.xml')
-        self._eye_cascade = self.get_cascade('../data/haarcascade_eye.xml')
+        self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
+        self._eye_cascade = self.get_cascade('haarcascade_eye.xml')
 
     def _process(self, frame):
         """
@@ -81,18 +83,20 @@ class FaceEyesMiddleware(BaseMiddleware):
         """
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         faces = self._face_cascade.detectMultiScale(gray, 1.3, 5)
-        print('Faces: ', len(faces))
+        # print('Faces: ', len(faces))
 
         for (x, y, w, h) in faces:
             cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             eye_gray = gray[y: y + h, x: x + w]
             eye_color = frame[y: y + h, x: x + w]
             eyes = self._eye_cascade.detectMultiScale(eye_gray)
-            print('Olhos: ', len(eyes))
+            # print('Olhos: ', len(eyes))
             for (ex, ey, ew, eh) in eyes:
                 cv.rectangle(eye_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+                break
+            break
 
-        return self
+        return frame
 
 
 if __name__ == '__main__':

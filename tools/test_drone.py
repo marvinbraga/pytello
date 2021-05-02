@@ -21,12 +21,7 @@ def test_drone_manager():
                 drone_manager, TestUpDownDecorator(
                     drone_manager, TestFlipDecorator(
                         drone_manager, TestPatrolDecorator(
-                            drone_manager
-                        )
-                    )
-                )
-            )
-        ).execute()
+                            drone_manager))))).execute()
 
         drone_manager.land()
     finally:

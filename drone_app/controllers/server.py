@@ -70,6 +70,10 @@ def command():
         drone.patrol()
     if cmd == 'stopPatrol':
         drone.stop_patrol()
+    if cmd == 'faceDetectAndTrack':
+        drone.enable_face_detect()
+    if cmd == 'stopFaceDetectAndTrack':
+        drone.disable_face_detect()
 
     return jsonify(status='success'), 200
 
