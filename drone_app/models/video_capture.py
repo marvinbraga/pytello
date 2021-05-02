@@ -128,10 +128,6 @@ class DroneFaceDetectMiddleware(BaseMiddleware):
         self._drone_manager = drone_manager
         self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
 
-    def execute_drone_rules(self, frame):
-        """ Executa as Regras relacionadas à movimentação do drone. """
-        return self
-
     def _process(self, frame):
         """
         Encontrar face e olhos.
@@ -144,10 +140,35 @@ class DroneFaceDetectMiddleware(BaseMiddleware):
         for (x, y, w, h) in faces:
             cv.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             if self._drone_manager:
-                self.execute_drone_rules(frame)
+                face_center_x = x + (w / 2)
+                face_center_y = y + (h / 2)
+                diff_x = self._drone_manager.video_setup.frame_center_x - face_center_x
+                diff_y = self._drone_manager.video_setup.frame_center_y - face_center_y
+                face_area = w * h
+                percent_face = face_area / self._drone_manager.video_setup.frame_area
+                self.execute_drone_rules(diff_x, diff_y, percent_face)
             break
 
         return frame
+
+    def execute_drone_rules(self, diff_x, diff_y, percent_face):
+        """ Executa as Regras relacionadas à movimentação do drone. """
+        drone_x, drone_y, drone_z, speed = 0, 0, 0, self._drone_manager.speed
+        if diff_x < -30:
+            drone_y = -30
+        if diff_x > 30:
+            drone_y = 30
+        if diff_y < -15:
+            drone_z = -30
+        if diff_y > 15:
+            drone_z = 30
+        if percent_face > 0.3:
+            drone_x = -30
+        if percent_face < -0.02:
+            drone_x = 30
+        # Movimenta o drone.
+        self._drone_manager.send_command(f'go {drone_x} {drone_y} {drone_z} {speed}', blocking=False)
+        return self
 
 
 if __name__ == '__main__':

@@ -86,6 +86,9 @@ class AbstractDroneManager(metaclass=Singleton):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.bind((self.host_ip, self.host_port))
         self.response = None
+        # Send Command
+        self._command_semaphore = Semaphore()
+        self._command_thread = None
         # Patrol
         self.patrol_event = None
         self.is_patrol = False
@@ -134,19 +137,30 @@ class AbstractDroneManager(metaclass=Singleton):
         self._retry(self._response_thread.is_alive, 30)
         self.socket.close()
 
-    def send_command(self, command):
+    def send_command(self, command, blocking=True):
+        """ Prepara thread para comando. """
+        self._command_thread = Thread(target=self._send_command, args=(command, blocking, ))
+        self._command_thread.start()
+
+    def _send_command(self, command, blocking=True):
         """ Registrar o envio de um comando. """
-        self.logger.info({'action': 'send_command', 'command': command})
-        self.socket.sendto(command.encode('utf-8'), self.drone_address)
+        is_acquire = self._command_semaphore.acquire(blocking=blocking)
+        if is_acquire:
+            with contextlib.ExitStack() as stack:
+                stack.callback(self._command_semaphore.release)
+                self.logger.info({'action': 'send_command', 'command': command})
+                self.socket.sendto(command.encode('utf-8'), self.drone_address)
 
-        self._retry(self._is_none_response, 3)
+                self._retry(self._is_none_response, 3)
 
-        response = None
-        if not self._is_none_response():
-            response = self.response.decode('utf-8')
+                response = None
+                if not self._is_none_response():
+                    response = self.response.decode('utf-8')
 
-        self.response = None
-        return response
+                self.response = None
+                return response
+        else:
+            self.logger.warning({'action': 'send_command', 'command': command, 'status': 'not_acquire'})
 
     def patrol(self):
         """ Inicializa as condições para fazer o patrulhamento. """
