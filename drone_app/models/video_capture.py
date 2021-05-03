@@ -2,16 +2,21 @@
 """
 Módulo de OpenCvVideoCapture.
 """
-import os.path
-from abc import ABCMeta, abstractmethod
+import os
+import time
 
+import cv2
 import cv2 as cv
 
-from config import PROJECT_ROOT
+from config import SNAPSHOT_IMAGE_FOLDER
+from core.abstract_drone import DroneSnapShotDirNotFound
+from core.abstract_middleware import BaseMiddleware
+from core.utils import Retry
 
 
 class OpenCvVideoCapture:
     """ Classe para trabalhar com o OpenCvVideoCapture. """
+
     def __init__(self, middleware, *args, **kwargs):
         self._args = args
         self._kwargs = kwargs
@@ -34,42 +39,9 @@ class OpenCvVideoCapture:
         cv.destroyAllWindows()
 
 
-class BaseMiddleware(metaclass=ABCMeta):
-    """ Classe base para middleware. """
-    def __init__(self, next_middleware=None):
-        self._next = next_middleware
-
-    @staticmethod
-    def get_cascade(file_name):
-        """
-        Carrega o cascade do arquivo XML do opencv.
-        :param file_name: nome do cascade
-        :return: obj
-        """
-        file = os.path.normpath(os.path.join(PROJECT_ROOT, f'data/{file_name}'))
-        if not os.path.isfile(file):
-            raise FileNotFoundError()
-        return cv.CascadeClassifier(file)
-
-    @abstractmethod
-    def _process(self, frame):
-        pass
-
-    def process(self, frame):
-        """
-        Método para processamento do middleware.
-        :param frame:
-        :return:
-        """
-        result = self._process(frame)
-        if self._next:
-            result = self._next.process(result)
-
-        return result
-
-
 class FaceEyesDetectMiddleware(BaseMiddleware):
     """ Classe middleware para encontrar olhos e face """
+
     def __init__(self, next_middleware=None):
         super(FaceEyesDetectMiddleware, self).__init__(next_middleware)
         self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
@@ -101,6 +73,7 @@ class FaceEyesDetectMiddleware(BaseMiddleware):
 
 class FaceDetectMiddleware(BaseMiddleware):
     """ Classe middleware para encontrar olhos e face """
+
     def __init__(self, next_middleware=None):
         super(FaceDetectMiddleware, self).__init__(next_middleware)
         self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
@@ -123,6 +96,7 @@ class FaceDetectMiddleware(BaseMiddleware):
 
 class DroneFaceDetectMiddleware(BaseMiddleware):
     """ Classe middleware para encontrar olhos e face """
+
     def __init__(self, next_middleware=None, drone_manager=None):
         super(DroneFaceDetectMiddleware, self).__init__(next_middleware)
         self._drone_manager = drone_manager
@@ -169,6 +143,37 @@ class DroneFaceDetectMiddleware(BaseMiddleware):
         # Movimenta o drone.
         self._drone_manager.go(drone_x, drone_y, drone_z, speed, blocking=False)
         return self
+
+
+class DroneSnapshotMiddleware(BaseMiddleware):
+    """ Classe para processamento de snapshot no drone. """
+    
+    def __init__(self, next_middleware=None, drone_manager=None):
+        super(DroneSnapshotMiddleware, self).__init__(next_middleware)
+        self._drone_manager = drone_manager
+        if not os.path.exists(SNAPSHOT_IMAGE_FOLDER):
+            raise DroneSnapShotDirNotFound()
+        self._is_snapshot = False
+
+    def _process(self, frame):
+        if self._is_snapshot:
+            _, jpeg = cv2.imencode('.jpg', frame)
+            jpeg_binary = jpeg.tobytes()
+
+            backup_file = f'{time.strftime("%Y%m%d-%H%M%S")}.jpg'
+            file = 'snapshot.jpg'
+            for file_name in (backup_file, file):
+                file_path = os.path.join(SNAPSHOT_IMAGE_FOLDER, file_name)
+                with open(file_path, 'wb') as f:
+                    f.write(jpeg_binary)
+            self._is_snapshot = False
+
+        return frame
+
+    def snapshot(self):
+        """ Aciona o snapshot. """
+        self._is_snapshot = True
+        return Retry(self._is_snapshot, 3, 0.1).go()
 
 
 if __name__ == '__main__':

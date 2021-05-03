@@ -140,6 +140,7 @@ cython_debug/
 
 # PyCharm
 .idea/
+drone_app/static/img/snapshots/
 
 # Zipfiles
 *.zip

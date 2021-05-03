@@ -11,6 +11,7 @@ from abc import ABCMeta, abstractmethod
 from threading import Event, Thread, Semaphore
 
 from core.sigleton import Singleton
+from core.utils import Retry
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -21,6 +22,14 @@ class DroneManagerNotFound(Exception):
     def __init__(self):
         super(DroneManagerNotFound, self).__init__(
             'Antes de executar o patrulhamento você deve informar um AbstractDroneManager.')
+
+
+class DroneSnapShotDirNotFound(Exception):
+    """ Classe para exceção de Drone Manager não encontrado. """
+
+    def __init__(self):
+        super(DroneSnapShotDirNotFound, self).__init__(
+            'O diretório de imagens para snapshots não existe.')
 
 
 class AbstractPatrolMiddleware(metaclass=ABCMeta):
@@ -109,12 +118,7 @@ class AbstractDroneManager(metaclass=Singleton):
 
     def _retry(self, check_method, iter_number):
         """ Método para fazer tentativas em uma checagem.  """
-        retry = 0
-        while check_method():
-            time.sleep(0.3)
-            if retry > iter_number:
-                break
-            retry += 1
+        Retry(check_method, iter_number).go()
         return self
 
     def _is_none_response(self):
@@ -139,7 +143,7 @@ class AbstractDroneManager(metaclass=Singleton):
 
     def send_command(self, command, blocking=True):
         """ Prepara thread para comando. """
-        self._command_thread = Thread(target=self._send_command, args=(command, blocking, ))
+        self._command_thread = Thread(target=self._send_command, args=(command, blocking,))
         self._command_thread.start()
 
     def _send_command(self, command, blocking=True):

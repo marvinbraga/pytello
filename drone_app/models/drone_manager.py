@@ -7,7 +7,8 @@ from enum import Enum
 
 from drone_app.core.abstract_drone import AbstractPatrolMiddleware
 from drone_app.core.abstract_video_drone import AbstractDroneVideoManager, VideoSetupFFmpeg
-from models.video_capture import DroneFaceDetectMiddleware
+from models.video_capture import DroneFaceDetectMiddleware, DroneSnapshotMiddleware
+
 
 # COMMAND_PORT = 8889
 # STATE_PORT = 8890
@@ -28,15 +29,16 @@ class TelloDrone(AbstractDroneVideoManager):
     DEFAULT_SPEED = 10
     DEFAULT_DEGREE = 10
 
-    def __init__(self, host_ip='192.168.10.3', host_port=8889, drone_ip='192.168.10.1', drone_port=8889,
+    def __init__(self, host_ip='192.168.10.2', host_port=8889, drone_ip='192.168.10.1', drone_port=8889,
                  is_imperial=False, speed=DEFAULT_SPEED, patrol_middleware=None, video_setup=None,
                  face_detect_middleware=None):
         # Utiliza as configurações de vídeo.
         vs = video_setup if video_setup else VideoSetupFFmpeg()
-        # Utiliza a detecção de face.
+        # Utiliza a detecção de face e snapshot.
         fd = face_detect_middleware if face_detect_middleware else DroneFaceDetectMiddleware(drone_manager=self)
+        self._snapshot = DroneSnapshotMiddleware(drone_manager=self, next_middleware=fd)
         super(TelloDrone, self).__init__(host_ip, host_port, drone_ip, drone_port,
-                                         is_imperial, speed, patrol_middleware, vs, fd)
+                                         is_imperial, speed, patrol_middleware, vs, self._snapshot)
         # Informa a regra de patrulhamento.
         if patrol_middleware:
             self.patrol_middleware.set_drone_manager(self)
@@ -235,6 +237,13 @@ class TelloDrone(AbstractDroneVideoManager):
         :return: string
         """
         return self.send_command('sn?')
+
+    def snapshot(self):
+        """
+        Faz uma captura de foto e apresenta na tela.
+        :return:
+        """
+        return self._snapshot.snapshot()
 
 
 class BasicPatrolMiddleware(AbstractPatrolMiddleware):

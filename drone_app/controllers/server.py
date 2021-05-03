@@ -74,6 +74,11 @@ def command():
         drone.enable_face_detect()
     if cmd == 'stopFaceDetectAndTrack':
         drone.disable_face_detect()
+    if cmd == 'snapshot':
+        if drone.snapshot():
+            return jsonify(status='success'), 200
+        else:
+            return jsonify(status='fail'), 400
 
     return jsonify(status='success'), 200
 
