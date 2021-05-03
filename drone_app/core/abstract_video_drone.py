@@ -81,7 +81,8 @@ class VideoSetupFFmpeg(AbstractVideoSetup):
     """ Classe para configurar o streamer de FFmpeg. """
 
     def _command_mount(self):
-        self._command = f'c:\\ffmpeg\\bin\\ffmpeg.exe -hwaccel auto -hwaccel_device opencl -i pipe:0 ' \
+        ffmpeg = 'c:\\ffmpeg\\bin\\ffmpeg.exe'
+        self._command = f'{ffmpeg} -hwaccel auto -hwaccel_device opencl -i pipe:0 ' \
                         f'-pix_fmt bgr24 -s {self._frame_x}x{self._frame_y} -f rawvideo pipe:1'
         return self
 

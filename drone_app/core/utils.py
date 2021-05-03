@@ -15,13 +15,9 @@ class Retry:
 
     def go(self):
         """ Executa as tentativas. """
-        result = self.__go_with_method() if type(self._check_method) == 'function' else self.__go_with_attr()
-        return result
-
-    def __go_with_method(self):
         retry = 0
         result = False
-        while self._check_method():
+        while self._check():
             time.sleep(self._wait)
             if retry < self._iter_number:
                 result = True
@@ -29,13 +25,5 @@ class Retry:
             retry += 1
         return result
 
-    def __go_with_attr(self):
-        retry = 0
-        result = False
-        while self._check_method:
-            time.sleep(0.3)
-            if retry < self._iter_number:
-                result = True
-                break
-            retry += 1
-        return result
+    def _check(self):
+        return self._check_method() if type(self._check_method) == 'function' else self._check_method
