@@ -9,7 +9,7 @@ import time
 from abc import ABCMeta, abstractmethod
 from threading import Thread
 
-import cv2
+import cv2 as cv
 import numpy as np
 
 from core.abstract_drone import AbstractDroneManager
@@ -188,6 +188,6 @@ class AbstractDroneVideoManager(AbstractDroneManager):
                 # Aplica a detecção de faces
                 frame = self._face_detect_middleware.process(frame)
 
-            _, jpeg = cv2.imencode('.jpg', frame)
+            _, jpeg = cv.imencode('.jpg', frame)
             jpeg_binary = jpeg.tobytes()
             yield jpeg_binary
