@@ -5,7 +5,6 @@ Módulo de OpenCvVideoCapture.
 import os
 import time
 
-import cv2
 import cv2 as cv
 
 from config import SNAPSHOT_IMAGE_FOLDER
@@ -157,7 +156,7 @@ class DroneSnapshotMiddleware(BaseMiddleware):
 
     def _process(self, frame):
         if self._is_snapshot:
-            _, jpeg = cv2.imencode('.jpg', frame)
+            _, jpeg = cv.imencode('.jpg', frame)
             jpeg_binary = jpeg.tobytes()
 
             backup_file = f'{time.strftime("%Y%m%d-%H%M%S")}.jpg'
