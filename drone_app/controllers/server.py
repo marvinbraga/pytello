@@ -20,84 +20,75 @@ def get_drone():
 
 @app.route('/')
 def index():
+    """ View para o index. """
     return render_template('index.html')
 
 
 @app.route('/controller/')
 def controller():
+    """ View para retornar a página de controles do Drone. """
     return render_template('controller.html')
 
 
 @app.route('/api/command/', methods=['POST'])
 def command():
+    """ View para executar comando do Drone. """
     cmd = request.form.get('command')
     logger.info({'action': 'command', 'cmd': cmd})
     drone = get_drone()
-    if cmd == 'takeOff':
-        drone.takeoff()
-    if cmd == 'land':
-        drone.land()
+    drone_command = {
+        'takeOff': drone.takeoff,
+        'land': drone.land,
+        'up': drone.up,
+        'down': drone.down,
+        'forward': drone.forward,
+        'back': drone.back,
+        'clockwise': drone.clockwise,
+        'counterClockwise': drone.count_clockwise,
+        'left': drone.left,
+        'right': drone.right,
+        'flipFront': drone.flip_forward,
+        'flipBack': drone.flip_back,
+        'flipLeft': drone.flip_left,
+        'flipRight': drone.flip_right,
+        'patrol': drone.patrol,
+        'stopPatrol': drone.stop_patrol,
+        'faceDetectAndTrack': drone.enable_face_detect,
+        'stopFaceDetectAndTrack': drone.disable_face_detect,
+    }.get(cmd)
     if cmd == 'speed':
         speed = request.form.get('speed')
         logger.info({'action': 'command', 'cmd': cmd, 'speed': speed})
         if speed:
             drone.set_speed(int(speed))
-    if cmd == 'up':
-        drone.up()
-    if cmd == 'down':
-        drone.down()
-    if cmd == 'forward':
-        drone.forward()
-    if cmd == 'back':
-        drone.back()
-    if cmd == 'clockwise':
-        drone.clockwise()
-    if cmd == 'counterClockwise':
-        drone.count_clockwise()
-    if cmd == 'left':
-        drone.left()
-    if cmd == 'right':
-        drone.right()
-    if cmd == 'flipFront':
-        drone.flip_forward()
-    if cmd == 'flipBack':
-        drone.flip_back()
-    if cmd == 'flipLeft':
-        drone.flip_left()
-    if cmd == 'flipRight':
-        drone.flip_right()
-    if cmd == 'patrol':
-        drone.patrol()
-    if cmd == 'stopPatrol':
-        drone.stop_patrol()
-    if cmd == 'faceDetectAndTrack':
-        drone.enable_face_detect()
-    if cmd == 'stopFaceDetectAndTrack':
-        drone.disable_face_detect()
-    if cmd == 'snapshot':
-        if drone.snapshot():
-            return jsonify(status='success'), 200
-        else:
+    elif cmd == 'snapshot':
+        if not drone.snapshot():
             return jsonify(status='fail'), 400
+    else:
+        if drone_command:
+            drone_command()
 
     return jsonify(status='success'), 200
 
 
 def video_generator():
+    """ Método para disponibilizar imagens recuperadas pelo Drone. """
     drone = get_drone()
     for jpeg in drone.video_jpeg_generator():
         yield (
-            b'--frame\r\n'
-            b'Content-Type: image/jpeg\r\n\r\n' +
-            jpeg +
-            b'\r\n\r\n'
+                b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' +
+                jpeg +
+                b'\r\n\r\n'
         )
 
 
 @app.route('/video/streaming')
 def video_feed():
+    """ View para retornar a imagem recuperada do Drone.  """
     return Response(video_generator(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 def run():
+    """ Método para inicializar as aplicação. """
     app.run(host=config.WEB_ADDRESS, port=config.WEB_PORT, threaded=True)

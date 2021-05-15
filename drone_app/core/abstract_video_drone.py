@@ -171,13 +171,13 @@ class AbstractDroneVideoManager(AbstractDroneManager):
             except Exception as ex:
                 self.logger.error({'action': 'video_binary_generator', 'ex': ex})
                 continue
+            else:
+                if not frame:
+                    continue
 
-            if not frame:
-                continue
-
-            frame = np.fromstring(frame, np.uint8).reshape(self.video_setup.frame_y, self.video_setup.frame_x,
-                                                           self.video_setup.divider)
-            yield frame
+                frame = np.fromstring(frame, np.uint8).reshape(
+                    self.video_setup.frame_y, self.video_setup.frame_x, self.video_setup.divider)
+                yield frame
 
     def video_jpeg_generator(self):
         """ Gerador de vídeo Jpeg. """
