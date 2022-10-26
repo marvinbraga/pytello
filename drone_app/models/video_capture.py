@@ -8,9 +8,9 @@ import time
 import cv2 as cv
 
 from config import SNAPSHOT_IMAGE_FOLDER
-from core.abstract_drone import DroneSnapShotDirNotFound
-from core.abstract_middleware import BaseMiddleware
-from core.utils import Retry
+from drone_app.core.exceptions import DroneSnapShotDirNotFound
+from drone_app.core.abstract_middleware import BaseMiddleware
+from drone_app.core.utils import Retry
 
 
 class OpenCvVideoCapture:
@@ -97,7 +97,7 @@ class DroneFaceDetectMiddleware(BaseMiddleware):
     """ Classe middleware para encontrar olhos e face """
 
     def __init__(self, next_middleware=None, drone_manager=None):
-        super(DroneFaceDetectMiddleware, self).__init__(next_middleware)
+        super().__init__(next_middleware)
         self._drone_manager = drone_manager
         self._face_cascade = self.get_cascade('haarcascade_frontalface_default.xml')
 
@@ -148,7 +148,7 @@ class DroneSnapshotMiddleware(BaseMiddleware):
     """ Classe para processamento de snapshot no drone. """
     
     def __init__(self, next_middleware=None, drone_manager=None):
-        super(DroneSnapshotMiddleware, self).__init__(next_middleware)
+        super().__init__(next_middleware)
         self._drone_manager = drone_manager
         if not os.path.exists(SNAPSHOT_IMAGE_FOLDER):
             raise DroneSnapShotDirNotFound()
@@ -156,6 +156,8 @@ class DroneSnapshotMiddleware(BaseMiddleware):
 
     def _process(self, frame):
         if self._is_snapshot:
+            if self._next:
+                frame = self._next.process(frame)
             _, jpeg = cv.imencode('.jpg', frame)
             jpeg_binary = jpeg.tobytes()
 

@@ -7,14 +7,16 @@ import logging
 from flask import render_template, request, jsonify, Response
 
 import config
-from models.drone_manager import TelloDrone, BasicPatrolMiddleware
+from drone_app.models.drone_manager import TelloDrone, BasicPatrolMiddleware, StreamTelloDrone
 
 logger = logging.getLogger(__name__)
 app = config.app
 
 
-def get_drone():
+def get_drone(video=False):
     """ Recupera o Drone Manager. """
+    if video:
+        return StreamTelloDrone(patrol_middleware=BasicPatrolMiddleware())
     return TelloDrone(patrol_middleware=BasicPatrolMiddleware())
 
 
@@ -35,7 +37,7 @@ def command():
     """ View para executar comando do Drone. """
     cmd = request.form.get('command')
     logger.info({'action': 'command', 'cmd': cmd})
-    drone = get_drone()
+    drone = get_drone(video=True)
     drone_command = {
         'takeOff': drone.takeoff,
         'land': drone.land,
@@ -73,7 +75,7 @@ def command():
 
 def video_generator():
     """ Método para disponibilizar imagens recuperadas pelo Drone. """
-    drone = get_drone()
+    drone = get_drone(video=True)
     for jpeg in drone.video_jpeg_generator():
         yield (
                 b'--frame\r\n'
@@ -86,7 +88,12 @@ def video_generator():
 @app.route('/video/streaming')
 def video_feed():
     """ View para retornar a imagem recuperada do Drone.  """
-    return Response(video_generator(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    try:
+        result = video_generator()
+        return Response(result, mimetype='multipart/x-mixed-replace; boundary=frame')
+    except Exception as e:
+        logging.error({'action': 'video_streaming', 'exception': str(e)})
+        return Response('', mimetype='text/plain')
 
 
 def run():

@@ -12,7 +12,7 @@ from threading import Thread
 import cv2 as cv
 import numpy as np
 
-from core.abstract_drone import AbstractDroneManager
+from drone_app.core.abstract_drone import AbstractDroneManager
 
 
 class AbstractVideoSetup(metaclass=ABCMeta):
@@ -81,7 +81,7 @@ class VideoSetupFFmpeg(AbstractVideoSetup):
     """ Classe para configurar o streamer de FFmpeg. """
 
     def _command_mount(self):
-        ffmpeg = 'c:\\ffmpeg\\bin\\ffmpeg.exe'
+        ffmpeg = 'ffmpeg.exe'
         self._command = f'{ffmpeg} -hwaccel auto -hwaccel_device opencl -i pipe:0 ' \
                         f'-pix_fmt bgr24 -s {self._frame_x}x{self._frame_y} -f rawvideo pipe:1'
         return self
@@ -90,10 +90,12 @@ class VideoSetupFFmpeg(AbstractVideoSetup):
 class AbstractDroneVideoManager(AbstractDroneManager):
     """ Classe para gerenciar drones com vídeo """
 
+    def _init_commands(self):
+        pass
+
     def __init__(self, host_ip, host_port, drone_ip, drone_port, is_imperial, speed, patrol_middleware, video_setup,
                  face_detect_middleware):
-        super(AbstractDroneVideoManager, self).__init__(host_ip, host_port, drone_ip, drone_port, is_imperial, speed,
-                                                        patrol_middleware)
+        super().__init__(host_ip, host_port, drone_ip, drone_port, is_imperial, speed, patrol_middleware)
         self.video_setup = video_setup
         cmd = self.video_setup.command.split(' ')
         self.proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -122,7 +124,7 @@ class AbstractDroneVideoManager(AbstractDroneManager):
 
     def stop(self):
         """ Parar a conexão com o drone. """
-        super(AbstractDroneVideoManager, self).stop()
+        super().stop()
         # Para o vídeo
         # os.kill(self.proc.pid, 9)
         # Windows

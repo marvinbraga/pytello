@@ -6,30 +6,14 @@ import contextlib
 import logging
 import socket
 import sys
-import time
 from abc import ABCMeta, abstractmethod
 from threading import Event, Thread, Semaphore
 
-from core.sigleton import Singleton
-from core.utils import Retry
+from drone_app.core.exceptions import DroneManagerNotFound
+from drone_app.core.sigleton import Singleton
+from drone_app.core.utils import Retry
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
-
-
-class DroneManagerNotFound(Exception):
-    """ Classe para exceção de Drone Manager não encontrado. """
-
-    def __init__(self):
-        super(DroneManagerNotFound, self).__init__(
-            'Antes de executar o patrulhamento você deve informar um AbstractDroneManager.')
-
-
-class DroneSnapShotDirNotFound(Exception):
-    """ Classe para exceção de Drone Manager não encontrado. """
-
-    def __init__(self):
-        super(DroneSnapShotDirNotFound, self).__init__(
-            'O diretório de imagens para snapshots não existe.')
 
 
 class AbstractPatrolMiddleware(metaclass=ABCMeta):
@@ -93,6 +77,7 @@ class AbstractDroneManager(metaclass=Singleton):
         self.host_port = host_port
         # Conexão
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        logging.info({'action': 'socket_connect', 'response': f'IP: {self.host_ip}:{self.host_port}'})
         self.socket.bind((self.host_ip, self.host_port))
         self.response = None
         # Send Command
