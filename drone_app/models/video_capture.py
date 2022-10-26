@@ -52,6 +52,8 @@ class FaceEyesDetectMiddleware(BaseMiddleware):
         :param frame:
         :return:
         """
+        if self._next:
+            frame = self._next.process(frame)
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         faces = self._face_cascade.detectMultiScale(gray, 1.3, 5)
         # print('Faces: ', len(faces))
@@ -83,6 +85,8 @@ class FaceDetectMiddleware(BaseMiddleware):
         :param frame:
         :return:
         """
+        if self._next:
+            frame = self._next.process(frame)
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         faces = self._face_cascade.detectMultiScale(gray, 1.3, 5)
 
@@ -107,6 +111,8 @@ class DroneFaceDetectMiddleware(BaseMiddleware):
         :param frame:
         :return:
         """
+        if self._next:
+            frame = self._next.process(frame)
         gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
         faces = self._face_cascade.detectMultiScale(gray, 1.3, 5)
 
